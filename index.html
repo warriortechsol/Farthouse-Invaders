@@ -266,6 +266,40 @@ function drawStars(dt){
   }
   ctx.restore();
 }
+function drawMoon(wave) {
+  ctx.save();
+  ctx.translate(canvas.width - 80, 80); // top-right corner
+  ctx.shadowColor = '#fff';
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = '#fdfdfd';
+  ctx.beginPath();
+  ctx.arc(0, 0, 40, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Phase mask
+  const phase = wave % 8; // 0–7
+  if (phase !== 0) {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    if (phase <= 4) {
+      // Waxing: mask left side
+      ctx.arc(-10, 0, 40, 0, Math.PI * 2);
+    } else {
+      // Waning: mask right side
+      ctx.arc(10, 0, 40, 0, Math.PI * 2);
+    }
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // Optional craters
+  ctx.fillStyle = '#ccc';
+  ctx.beginPath(); ctx.arc(-10, -8, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(12, 6, 4, 0, Math.PI * 2); ctx.fill();
+
+  ctx.restore();
+}
 
 function drawBoss(b) {
   ctx.save();
@@ -326,7 +360,7 @@ function drawPowerup(p) {
 function render(){
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawStars(dtRender);
-
+  drawMoon(wave);
   // Splash gate: render splash and skip gameplay until started
   if (showSplash) {
     ctx.save();
@@ -412,12 +446,20 @@ function loop(now) {
 requestAnimationFrame(loop);
 
 function tryFire(){
-  if(player.cooldown<=0){
-    bullets.push({x:player.x,y:player.y-20,size:CONFIG.bullet.size,color:CONFIG.bullet.color,speed:CONFIG.bullet.speed});
-    player.cooldown=CONFIG.player.fireCooldown;
-    beep(880,0.05,'square',0.06);
+  if (player.cooldown <= 0) {
+    const bulletType = rocketMode ? CONFIG.rocketBullet : CONFIG.bullet;
+    bullets.push({
+      x: player.x,
+      y: player.y - 20,
+      size: bulletType.size,
+      color: bulletType.color,
+      speed: bulletType.speed
+    });
+    player.cooldown = CONFIG.player.fireCooldown;
+    beep(880, 0.05, 'square', 0.06);
   }
 }
+
 
 window.addEventListener('keydown', e=>{
   if(e.key==='p' || e.key==='P'){ paused = !paused; resumeAudio(); }
